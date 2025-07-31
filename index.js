@@ -11,6 +11,8 @@ const app = express();
 app.use(cors({
   origin: 'https://e-learning-platform-iota-two.vercel.app',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Explicitly allow methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
 }));
 app.use(express.json());
 
