@@ -22,7 +22,11 @@ app.use('/notifications', require('./routes/notifications'));
 app.use('/admin', require('./routes/admin'));
 app.use('/quiz', require('./routes/quiz'));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT; 
+if (!PORT) {
+  console.error('PORT environment variable is not set. Exiting...');
+  process.exit(1);
+}
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
