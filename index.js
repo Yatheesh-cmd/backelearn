@@ -2,16 +2,17 @@ const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const cors = require('cors');
-const path = require('path');
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://e-learning-platform-iota-two.vercel.app',
+  credentials: true,
+}));
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'Uploads')));
 
 app.use('/auth', require('./routes/auth'));
 app.use('/courses', require('./routes/courses'));
