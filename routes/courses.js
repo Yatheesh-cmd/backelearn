@@ -3,8 +3,12 @@ const router = express.Router();
 const { authMiddleware, instructorMiddleware } = require('../middleware/auth');
 const { createCourse, getAllCourses, getInstructorCourses, getCourseDetails, updateCourse, deleteCourse } = require('../controllers/courseController');
 const multer = require('multer');
+const path = require('path');
 
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'Uploads/'),
+  filename: (req, file, cb) => cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`),
+});
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {

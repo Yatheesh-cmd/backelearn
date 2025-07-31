@@ -2,19 +2,16 @@ const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const cors = require('cors');
+const path = require('path');
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-app.use(cors({
-  origin: 'https://e-learning-platform-iota-two.vercel.app',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Explicitly allow methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
-}));
+app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'Uploads')));
 
 app.use('/auth', require('./routes/auth'));
 app.use('/courses', require('./routes/courses'));
