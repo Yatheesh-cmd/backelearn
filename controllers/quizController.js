@@ -197,7 +197,7 @@ exports.submitQuiz = async (req, res) => {
     }
     console.log('submitQuiz: Quiz fetched:', quiz);
 
-    // Verify quiz belongs to the provided lesson and course
+   
     if (!quiz.courseId) {
       console.log('submitQuiz: Quiz missing courseId:', quiz);
       return res.status(400).json({ message: 'Quiz is missing courseId' });
@@ -215,7 +215,7 @@ exports.submitQuiz = async (req, res) => {
       return res.status(400).json({ message: 'Quiz does not belong to the specified lesson' });
     }
 
-    // Validate answers
+    
     if (!Array.isArray(answers)) {
       console.log('submitQuiz: Answers is not an array:', answers);
       return res.status(400).json({ message: 'Answers must be an array' });
@@ -225,7 +225,7 @@ exports.submitQuiz = async (req, res) => {
       return res.status(400).json({ message: 'Answers array length must match the number of questions' });
     }
 
-    // Check for invalid answers
+    
     for (let i = 0; i < quiz.questions.length; i++) {
       if (!quiz.questions[i]) {
         console.log('submitQuiz: Invalid question at index:', i);
@@ -241,7 +241,7 @@ exports.submitQuiz = async (req, res) => {
       }
     }
 
-    // Fetch enrollment
+   
     const enrollment = await Enrollment.findOne({ studentId: req.user.id, courseId });
     if (!enrollment) {
       console.log('submitQuiz: Enrollment not found for studentId:', req.user.id, 'courseId:', courseId);
@@ -249,7 +249,7 @@ exports.submitQuiz = async (req, res) => {
     }
     console.log('submitQuiz: Enrollment fetched:', enrollment);
 
-    // Calculate score and collect results
+   
     let correctAnswers = 0;
     const results = quiz.questions.map((q, index) => {
       const isCorrect = answers[index] === q.correctAnswer;
@@ -263,7 +263,7 @@ exports.submitQuiz = async (req, res) => {
     });
     const score = (correctAnswers / quiz.questions.length) * 100;
 
-    // Update enrollment progress
+   
     const progressIndex = enrollment.progress.findIndex(p => p.lessonId && p.lessonId.toString() === lessonId);
     if (progressIndex === -1) {
       enrollment.progress.push({ lessonId, watched: false, quizScore: score });

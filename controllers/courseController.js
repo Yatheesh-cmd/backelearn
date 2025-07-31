@@ -3,23 +3,36 @@ const Lesson = require('../models/Lesson');
 const Quiz = require('../models/Quiz');
 const fs = require('fs');
 const path = require('path');
+const cloudinary = require('../cloudinaryConfig');
 
 exports.createCourse = async (req, res) => {
   const { title, description, category } = req.body;
-  const thumbnail = req.file?.filename;
+  let thumbnailUrl = null;
+  let publicId = null;
 
   try {
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.buffer.toString('base64'), {
+        folder: 'courses',
+        resource_type: 'image',
+      });
+      thumbnailUrl = result.secure_url;
+      publicId = result.public_id;
+    }
+
     const course = new Course({
       title,
       description,
       category,
-      thumbnail,
+      thumbnail: thumbnailUrl,
       instructor: req.user.id,
     });
     await course.save();
     res.status(201).json({ message: 'Course created', course });
   } catch (error) {
-    if (thumbnail) fs.unlinkSync(path.join(__dirname, '../Uploads', thumbnail));
+    if (publicId) {
+      await cloudinary.uploader.destroy(publicId);
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -71,7 +84,7 @@ exports.getCourseDetails = async (req, res) => {
       _id: course._id,
       title: course.title,
       quizzes: course.quizzes.map(q => ({ _id: q._id, lessonId: q.lessonId, title: q.title }))
-    }, null, 2)); // Debugging log
+    }, null, 2)); 
     res.status(200).json(course);
   } catch (error) {
     console.error('getCourseDetails: Error:', error.message);
@@ -81,25 +94,39 @@ exports.getCourseDetails = async (req, res) => {
 
 exports.updateCourse = async (req, res) => {
   const { title, description, category } = req.body;
-  const thumbnail = req.file?.filename;
+  let thumbnailUrl = null;
+  let newPublicId = null;
 
   try {
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).json({ message: 'Course not found' });
     if (course.instructor.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
 
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.buffer.toString('base64'), {
+        folder: 'courses',
+        resource_type: 'image',
+      });
+      thumbnailUrl = result.secure_url;
+      newPublicId = result.public_id;
+
+      if (course.thumbnail) {
+        const oldPublicId = course.thumbnail.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(`courses/${oldPublicId}`);
+      }
+    }
+
     course.title = title || course.title;
     course.description = description || course.description;
     course.category = category || course.category;
-    if (thumbnail) {
-      if (course.thumbnail) fs.unlinkSync(path.join(__dirname, '../Uploads', course.thumbnail));
-      course.thumbnail = thumbnail;
-    }
+    course.thumbnail = thumbnailUrl || course.thumbnail;
     course.status = 'pending';
     await course.save();
     res.status(200).json({ message: 'Course updated', course });
   } catch (error) {
-    if (thumbnail) fs.unlinkSync(path.join(__dirname, '../Uploads', thumbnail));
+    if (newPublicId) {
+      await cloudinary.uploader.destroy(newPublicId);
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -110,7 +137,12 @@ exports.deleteCourse = async (req, res) => {
     if (!course) return res.status(404).json({ message: 'Course not found' });
     if (course.instructor.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
 
-    if (course.thumbnail) fs.unlinkSync(path.join(__dirname, '../Uploads', course.thumbnail));
+
+    if (course.thumbnail) {
+      const publicId = course.thumbnail.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`courses/${publicId}`);
+    }
+
     await Lesson.deleteMany({ courseId: course._id });
     await Quiz.deleteMany({ courseId: course._id });
     await Course.findByIdAndDelete(req.params.id);
